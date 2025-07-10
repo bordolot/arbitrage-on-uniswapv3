@@ -1,29 +1,20 @@
-## Arbitrage on Uniswap v3
+//SPDX-License-Identifier:MIT
 
-This project performs arbitrage on a pair of uniswap v3 pools with a tokens borrowed through a flash loan.
+pragma solidity >=0.6.2;
+pragma abicoder v2;
 
+import {Test, console} from "forge-std/Test.sol";
 
-## Tech Stack
+import {FlashCaller} from "../src/FlashCaller.sol";
+import {SimulateRealArbitrage} from "../src/SimulateRealArbitrage.sol";
 
-- Foundry
-- Solidity
+/**
+1. Run arbitrage-opportunity-seeker project
 
-## Usage
+2. Open `./out/optimalAmounts.json`
 
-# Preriquisetes
-You need data to perform an arbitrage. To get such a data you can use the `arbitrage-opportunity-seeker` project. Run it and in the `optimalAmounts,json` file, you will find the necessary data.
-
-
-1. Run
-```bash
-forge build
-```
-
-2. Insert necessary data.
-
-Open `./out/optimalAmounts.json` from `arbitrage-opportunity-seeker` project.
-Get one entry, for example:
-```json
+3. Get an element from optimalAmounts.json  e.g. :
+ 
   {
     "block_number": 22876813,
     "poolsForArbitrage": [
@@ -51,11 +42,15 @@ Get one entry, for example:
     "numberOfTokensToStart": "2873000000000000",
     "estimatedProfit": "79782813754892"
   }
-```
 
-Open `./test/Test_ReaLArbitrage.t.sol` and insert the necessary values.
+fill variables in TestRealArbitrage
 
-```solidity
+ */
+
+contract TestRealArbitrage is Test {
+    FlashCaller flashCaller;
+    SimulateRealArbitrage simulateRealArbitrage;
+
     // numberOfTokensToStart
     uint256 AMOUNT_TO_START = 2873000000000000;
     // token0Addr
@@ -74,20 +69,21 @@ Open `./test/Test_ReaLArbitrage.t.sol` and insert the necessary values.
     // OR if there are no cash in poolYouCanCallFlash
     // backupPoolYouCanCallFlash[1]
     bool BORROW_TOKEN0 = true;
-```
 
-2. Get endpoint and block number.
+    function setUp() public {
+        flashCaller = new FlashCaller();
+        simulateRealArbitrage = new SimulateRealArbitrage(address(flashCaller));
+    }
 
-Get your individual api key `{api_endpint_key}` from Alchemy.
-You can use a different rcp provider.
-
-Read the block number from `optimalAmounts.json` e.g.:
-`{block_number} = 22876813` 
-
-
-3. Run forked test to check if arbitrage will be succesfull.
-
-Call
-```bash
-forge test --fork-url https://eth-mainnet.g.alchemy.com/v2/{api_endpint_key} --fork-block-number {block_number} -vv
-```
+    function testMakeArbitrage() public {
+        simulateRealArbitrage.makeArbitrage(
+            AMOUNT_TO_START,
+            TOKEN0,
+            TOKEN1,
+            POOL1,
+            POOL2,
+            POOL_FOR_LOAN,
+            BORROW_TOKEN0
+        );
+    }
+}
